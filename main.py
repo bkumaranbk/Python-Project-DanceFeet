@@ -43,6 +43,8 @@ try:
             reg_status text,
             telephoneNo text,
             availability number,
+            Dance_style text,
+            hourly_rate number,
             uId text
         )
         """)
@@ -54,11 +56,12 @@ try:
     c.execute("""CREATE TABLE students (
             studentId text,
             fname text,
-            sname,
-            email,
+            sname text,
+            email text,
             gender text,
-            dob,
+            dob text,
             telephoneNo text,
+            instructorsId text,
             reg_status text,
             sId text
         )
@@ -96,6 +99,11 @@ class Admin:
         print('\n\t\t--------------Admin Login--------------\n')
         login_uname = input('\tUsername: ')
         login_pass = input('\tPassword: ')
+
+        if(login_uname == "" and login_pass == ""):
+            print("\nPlease Enter The Username And Password Details to login...\n")
+            self.Admin_login()
+
         c.execute("SELECT rowid, * FROM admin WHERE username = ? AND passwd = ?", (login_uname, login_pass))
         info = c.fetchall()
         # print(info)
@@ -142,11 +150,14 @@ class Admin:
                     input("Press any key for try again! ")
                     self.register_Admin()
 
-        c.execute("select count(*) from admin")
-        result = c.fetchone()
+        # c.execute("select count(*) from admin")
+        c.execute("SELECT rowid, * FROM admin")
+
+        result = c.fetchall()
+        # print(len(result))
 
         if reg_pass == reg_conf_pass:
-            if len(result) <= 1:
+            if len(result) < 1:
                 c.execute("INSERT INTO admin VALUES (?,?,?,?)", (reg_uname, reg_name, reg_email, reg_pass))
                 conn.commit()
                 print("\nSuccessfully Registered!!! Now Login! ;-)\n\n")
@@ -155,8 +166,7 @@ class Admin:
                 print("\n Sorry.... ! Only one admin can control this system.. further more details contact danceFeet.")
                 exit(0)
         else:
-            print("Password does not matce"
-                  "h! Try again!")
+            print("Password does not match! Try again!")
             input("Press any key for try again! ")
             self.register_Admin()
 
@@ -174,7 +184,7 @@ class Admin:
                 self.search_print(0, uId)
             elif n == '3':
                 self.search_all_instructors()
-                self.search_all_instructors_dance()
+                # self.search_all_instructors_dance()
             elif n == '4':
                 self.update_instructor(uId)
             elif n == '5':
@@ -210,6 +220,8 @@ class Admin:
             print(f'\t* Gender: {infos[0][3]}\n')
             print(f'\t* Telephone Number: {infos[0][5]}\n')
             print(f'\t* Availability: {infos[0][6]}\n')
+            print(f'\t* Dance Style: {infos[0][7]}\n')
+            print(f'\t* Hourly Rate: {infos[0][8]}\n')
             print(f'\t* Registration Status: {infos[0][4]}\n')
 
         else:
@@ -221,8 +233,7 @@ class Admin:
         if len(infos_dance) >= 1 :
             print(f'\t* Dance Style: {infos_dance[0][2]}\n')
             print(f'\t* Hourly Rate: {infos_dance[0][3]}\n')
-        else:
-            print('\n\nNot found!!!')
+
         input('\nPress any key to continue...')
 
     # ------------------------------------ Search All instructors --------------------------
@@ -342,13 +353,17 @@ class Admin:
         # course_sec = [tuple(x.split(':')) for x in input('Dance and Type: Input Style "Dance:Samba Dance:Barat" You Can Enter MULTIPLE dance type using space \nEnter all courses: \n\n').split()]
         dance_style = input('Input Dance Style: ')
         tpNo = input('Telephone Number: ')
-        hourlyRate = int(input('Hourly Rate: '))
-        availability = int(input('Availability (Days of the week): '))
+        hourlyRate = (input('Hourly Rate: '))
+        availability = (input('Availability (Days of the week): '))
 
         reg = self.reg_status_fn()
-        c.execute("INSERT INTO dance VALUES (?,?,?,?)", (id_input, dance_style, hourlyRate, uId))
-        c.execute("INSERT INTO instructors VALUES (?,?,?,?,?,?,?)", (id_input, name, gender, reg, tpNo, availability, uId))
 
+        if(id_input != "" and dance_style != "" and hourlyRate != "" and name != "" and gender != "" and reg != "" and availability != ""):
+            c.execute("INSERT INTO dance VALUES (?,?,?,?)", (id_input, dance_style, hourlyRate, uId))
+            c.execute("INSERT INTO instructors VALUES (?,?,?,?,?,?,?,?,?)", (id_input, name, gender, reg, tpNo, availability, dance_style,hourlyRate, uId))
+        else:
+            print("Please required Feild to continue...")
+            self.add_instructor(uId)
 
         conn.commit()
 
@@ -367,9 +382,9 @@ class Admin:
             print(f'\n\t-----------Update Information of ID: {id_input}------------\n\n')
 
             print(
-                '\t\t1. Update Name\n\t\t2. Update Telephone Number\n\t\t3. Update Gender Status\n\t\t4. Update Availability Status\n\t\t5. Update Registration Status\n\t\t6. Show Updated Information\n\n')
+                '\t\t1. Update Name\n\t\t2. Update Telephone Number\n\t\t3. Update Gender Status\n\t\t4. Update Availability Status\n\t\t5. Update Dance Style\n\t\t6. Update Hourly Rate\n\t\t7. Update Registration Status\n\t\t8. Show Updated Information\n\n')
             while True:
-                n = input("Enter 1, 2, 3, 4, 5, or 6: ")
+                n = input("Enter 1, 2, 3, 4, 5, 6, 7 or 8: ")
                 if n == '1':
                     name = input("Enter Updated Name: ")
                     c.execute("UPDATE instructors SET name = ? WHERE instructorsId = ?", (name, id_input))
@@ -406,19 +421,107 @@ class Admin:
                 #     c.execute("UPDATE instructors SET hourly_rate = ? WHERE instructorsId = ?", (hourly_rate, id_input))
                 #     conn.commit()
 
+
+
                 elif n == '5':
+                    Dance_style = input("Enter Dance Style: ")
+                    c.execute("UPDATE instructors SET Dance_style = ? WHERE instructorsId = ?", (Dance_style, id_input))
+                    c.execute("UPDATE dance SET Dance_style = ? WHERE instructorsId = ?", (Dance_style, id_input))
+                    conn.commit()
+
+                elif n == '6':
+                    hourly_rate = input("Enter Hourly Rate: ")
+                    c.execute("UPDATE instructors SET hourly_rate = ? WHERE instructorsId = ?", (hourly_rate, id_input))
+                    c.execute("UPDATE dance SET Dance_style = ? WHERE instructorsId = ?", (hourly_rate, id_input))
+                    conn.commit()
+
+                elif n == '7':
                     reg = self.reg_status_fn()
                     c.execute("UPDATE instructors SET reg_status = ? WHERE instructorsId = ?", (reg, id_input))
                     conn.commit()
 
 
-                elif n == '6':
+                elif n == '8':
                     self.search_print(id_input, uId)
                     return
         else:
             print("\nNot Found!!!")
 
         input('\nPress any key to continue...')
+
+    # ------------------------------------ Update Instructor --------------------------------
+    def update_student(self, sId):
+        clear.clear()
+        print('\n\t-----------Update Students Information-----------\n')
+        id_input = input("ID Number: ")
+        c.execute("SELECT rowid, * FROM students WHERE studentId = ? AND sId = ?", (id_input, sId))
+        infos = c.fetchall()
+        if len(infos) >= 1:
+            print(f'\n\t-----------Update Information of ID: {id_input}------------\n\n')
+
+            print(
+                '\t\t1. Update First Name\n\t\t2. Update Surname\n\t\t3. Update Email\n\t\t4. Update Gender\n\t\t5. Update Date Of Birth\n\t\t6. Update Telephone Number\n\t\t7. Update Instructor\n\t\t8. Update Regstration Status\n\t\t9. Show all Updated inforamtion \n\n')
+            while True:
+                n = input("Enter 1, 2, 3, 4, 5, 6, 7, 8, or 9: ")
+                if n == '1':
+                    fname = input("Enter Updated First Name: ")
+                    c.execute("UPDATE students SET fname = ? WHERE studentId = ?", (fname, id_input))
+                    conn.commit()
+
+                elif n == '2':
+                    sname = input("Enter Surname: ")
+                    c.execute("UPDATE students SET sname = ? WHERE studentId = ?", (sname, id_input))
+                    conn.commit()
+
+                elif n == '3':
+                    email = input("Enter Email: ")
+                    c.execute("UPDATE students SET email = ? WHERE studentId = ?", (email, id_input))
+                    conn.commit()
+
+                elif n == '4':
+                    gender = input("Enter Gender Status: ")
+                    c.execute("UPDATE students SET gender = ? WHERE studentId = ?", (gender, id_input))
+                    conn.commit()
+
+                elif n == '5':
+                    dob = input("Enter Date of Birth: ")
+                    c.execute("UPDATE students SET dob = ? WHERE studentId = ?", (dob, id_input))
+                    conn.commit()
+
+                elif n == '6':
+                    telephoneNo = input("Enter Telephone Number: ")
+                    c.execute("UPDATE students SET telephoneNo = ? WHERE studentId = ?", (telephoneNo, id_input))
+                    conn.commit()
+
+                elif n == '7':
+                    print("\n\t\t--- Avilable Instructor... ---")
+                    self.search_all_instructors_dance()
+
+                    dance_ins = input("Enter Dance Instructor ID to take lesson for this student: ")
+
+                    for name in (" "):
+                        c.execute("SELECT rowid FROM dance WHERE instructorsId = ?", (dance_ins,))
+                        data = c.fetchall()
+                        if len(data) == 0:
+                            print('\n Sorry... There is no Instructor ID .. Please check it...')
+                            self.student_menu(sId)
+                        else:
+                            c.execute("UPDATE students SET instructorsId = ? WHERE studentId = ?", (dance_ins, id_input))
+                            conn.commit()
+
+                elif n == '8':
+                    reg = self.reg_status_fn()
+                    c.execute("UPDATE students SET reg_status = ? WHERE studentId = ?", (reg, id_input))
+                    conn.commit()
+
+                elif n == '9':
+                    self.search_print_student(id_input, sId)
+                    return
+        else:
+            print("\nNot Found!!!")
+
+        input('\nPress any key to continue...')
+
 
     # ------------------------------------ Delete Instructor --------------------------------
     def delete_instructor(self, uId):
@@ -455,12 +558,12 @@ class Admin:
 
     # ------------------------------------ Register Status Instructor --------------------------------
     def reg_status_fn(self):
-        reg_input = int(
+        reg_input = (
             input('\nRegistration Status: \n\t1. Completed  2. Partially Completed  3. Pending\nEnter 1, 2 or 3: '))
 
-        if reg_input == 1:
+        if reg_input == "1":
             n = 'Completed'
-        elif reg_input == 2:
+        elif reg_input == "2":
             n = 'Partially Completed'
         else:
             n = 'Pending'
@@ -474,7 +577,7 @@ class Admin:
             clear.clear()
             print('\n\t---------------- Dance_Feet System (Students) ----------------\n\t\t\t\t\t By CT/2017/033\n')
             print(
-                '\t\t\t1. Add a New Student\n\t\t\t2. Search by Student ID\n\t\t\t3. Search all Students\n\t\t\t4. Go with Instructors Section\n ')
+                '\t\t\t1. Add a New Student\n\t\t\t2. Search by Student ID\n\t\t\t3. Search all Students\n\t\t\t4. Update Students Details\n\t\t\t5. Go with Instructors Section\n ')
             n = input("Enter 1, 2, 3, 4 and 'e' for exit: ")
             if n == '1':
                 self.add_students(sId)
@@ -483,6 +586,8 @@ class Admin:
             elif n == '3':
                 self.search_all_students()
             elif n == '4':
+                self.update_student(sId)
+            elif n == '5':
                 self.admin_menu(self)
             elif n == 'e':
                 exit()
@@ -508,20 +613,31 @@ class Admin:
         email = input('Email: ')
         gender = input('Gender: ')
         DOB = input('Date of Birth: ')
-        # print('Courses and Section: Input Style "Dance:Samba" \nEnter all courses: ')
-        print()
-        # course_sec = [tuple(x.split(':')) for x in input('Dance and Type: Input Style "Dance:Samba Dance:Barath" \nEnter all courses: \n\n').split()]
         tpNo = input('Telephone Number: ')
 
-        reg = self.reg_status_st()
+        print("\n\t\t--- Avilable Instructor... ---")
+        self.search_all_instructors_dance()
 
-        c.execute("INSERT INTO students VALUES (?,?,?,?,?,?,?,?,?)", (id_input, fname, sname, email, gender, DOB, reg, tpNo, sId))
+        dance_ins = input("Enter Dance Instructor ID to take lesson for this student: ")
 
-        # reg_id = c.lastrowid
-        # id_course_sec = [(reg_id,) + item for item in course_sec]
-        # c.executemany("INSERT INTO courses VALUES (?,?,?)", id_course_sec)
+        for name in (" "):
+            c.execute("SELECT rowid FROM dance WHERE instructorsId = ?", (dance_ins,))
+            data = c.fetchall()
+            if len(data) == 0:
+                print('\n Sorry... There is no Instructor ID .. Please check it...')
+                self.add_students(sId)
+            else:
+                reg = self.reg_status_st()
 
-        conn.commit()
+                if (
+                        id_input != "" and fname != "" and sname != "" and email != "" and gender != "" and DOB != "" and reg != "" and tpNo != "" and dance_ins != ""):
+                    c.execute("INSERT INTO students VALUES (?,?,?,?,?,?,?,?,?,?)",
+                              (id_input, fname, sname, email, gender, DOB, tpNo, dance_ins, reg, sId))
+                else:
+                    print("Please required Feild to continue...")
+                    self.add_students(sId)
+
+                    conn.commit()
 
         print('\n- Registration Recorded of ID - ',id_input)
         self.search_print_student(id_input, sId)
@@ -559,8 +675,9 @@ class Admin:
             # print('\tCourses     Section')
             # for info in infos_course:
             #     print('\t', info[1], '\t\t', info[2])
-            print(f'\t* Telephone Number: {infos[0][8]}\n')
-            print(f'\t* Registration Status: {infos[0][7]}')
+            print(f'\t* Instructor ID: {infos[0][8]}\n')
+            print(f'\t* Telephone Number: {infos[0][7]}\n')
+            print(f'\t* Registration Status: {infos[0][9]}')
 
         else:
             print('\n\nNot found!!!')
@@ -569,12 +686,11 @@ class Admin:
 
     # ------------------------------------ Register Status Student --------------------------------
     def reg_status_st(self):
-        reg_input = int(
-            input('\nRegistration Status: \n\t1. Completed  2. Partially Completed  3. Pending\nEnter 1, 2 or 3: '))
+        reg_input =(input('\nRegistration Status: \n\t1. Completed  2. Partially Completed  3. Pending\nEnter 1, 2 or 3: '))
 
-        if reg_input == 1:
+        if reg_input == "1":
             n = 'Completed'
-        elif reg_input == 2:
+        elif reg_input == "2":
             n = 'Partially Completed'
         else:
             n = 'Pending'
@@ -610,32 +726,40 @@ class Instructor():
 
     def register_instructor(self):
         print('\n\n\t\t--------------Create an Instructor Account--------------\n\n')
-        reg_uname = input('\tUsername: ')
-        reg_pass = input('\tPassword: ')
+        reg_uname = input('\tInstructor Registration ID: ')
 
-        reg_conf_pass = input('\tConfirm Password: ')
-        c.execute("SELECT rowid, * FROM instructor WHERE username = username ")
-        infos = c.fetchall()
-        # print(infos)
+        c.execute("SELECT 1 FROM instructors WHERE instructorsId= ?", (reg_uname,))
+        info = c.fetchall()
+        # print(info)
+        if len(info) >= 1:
+            reg_pass = input('\tPassword: ')
+            reg_conf_pass = input('\tConfirm Password: ')
 
-        for i in infos:
-            for s in i:
-                if(s==reg_uname):
-                    print("Username already Taken... \n")
-                    input("Press any key for try again! ")
-                    self.register_instructor()
+            # c.execute("SELECT rowid, * FROM instructor WHERE username = username ")
+            # infos = c.fetchall()
+            # # print(infos)
+            #
+            # for i in infos:
+            #     for s in i:
+            #         if (s == reg_uname):
+            #             print("Username already Taken... \n")
+            #             input("Press any key for try again! ")
+            #             self.register_instructor()
 
+            if reg_pass == reg_conf_pass:
+                c.execute("INSERT INTO instructor VALUES (?,?)", (reg_uname, reg_pass))
+                conn.commit()
+                print("\nSuccessfully Registered!!! Now Login! ;-)\n\n")
+                self.Instructor_login()
+            else:
+                print("Password does not match! Try again!")
+                input("Press any key for try again! ")
+                self.register_instructor()
 
-
-        if reg_pass == reg_conf_pass:
-            c.execute("INSERT INTO instructor VALUES (?,?)", (reg_uname, reg_pass))
-            conn.commit()
-            print("\nSuccessfully Registered!!! Now Login! ;-)\n\n")
-            self.Instructor_login()
         else:
-            print("Password does not match! Try again!")
-            input("Press any key for try again! ")
+            print("\nInstructor Registration ID Doesn't exists Please contact Your Dancefeet Admin... Or Enter Correct Registration ID..")
             self.register_instructor()
+
 
     # --------------------------------- Instructor Menu -----------------------------------------------
     def student_menu(self, sId):
@@ -684,7 +808,7 @@ class Instructor():
 
 
     # ------------------------------------ Search Student --------------------------------
-    def search_print_student(self,id_input, sId):
+    def search_print_student(self, id_input, sId):
         if id_input == 0:
             clear.clear()
             print('\n\t-----------Searching (by Student ID)-----------\n\n')
@@ -702,24 +826,28 @@ class Instructor():
         infos = c.fetchall()
         # print(infos)
         if len(infos) >= 1:
-            c.execute("SELECT * FROM courses WHERE reg_id = ?", (str(infos[0][0]),))
-            infos_course = c.fetchall()
-            conn.commit()
+            # c.execute("SELECT * FROM courses WHERE reg_id = ?", (str(infos[0][0]),))
+            # infos_course = c.fetchall()
+            # conn.commit()
             print('\nHere is the Students Information:\n')
 
             print(f'\t* Student ID: {id_input}\n')
-            print(f'\t* Name: {infos[0][2]}\n')
-            print(f'\t* Gender: {infos[0][3]}\n')
-            print('\tCourses     Section')
-            for info in infos_course:
-                print('\t', info[1], '\t\t', info[2])
-            print(f'\t* Telephone Number: {infos[0][5]}\n')
-            print(f'\t* Registration Status: {infos[0][4]}')
+            print(f'\t* First Name: {infos[0][2]}\n')
+            print(f'\t* SurName: {infos[0][3]}\n')
+            print(f'\t* Email Address: {infos[0][4]}\n')
+            print(f'\t* Gender: {infos[0][5]}\n')
+            print(f'\t* Date Of Birth: {infos[0][6]}\n')
+            # print('\tCourses     Section')
+            # for info in infos_course:
+            #     print('\t', info[1], '\t\t', info[2])
+            print(f'\t* Telephone Number: {infos[0][8]}\n')
+            print(f'\t* Registration Status: {infos[0][7]}')
 
         else:
             print('\n\nNot found!!!')
+            self.student_menu(sId)
 
-        input('\nPress any key to Book a Student for a lesson...')
+        input('\nPress any key to continue...')
 
     # ------------------------------------ Register Status Student --------------------------------
     def reg_status_st(self):
@@ -742,11 +870,11 @@ if __name__ == '__main__':
     # Login Screen
     clear.clear()
     print('\n\t----------------Dance_Feet System----------------\n\t\t\t\t\t By CT/2017/033\n')
-    print('\t\t\t1. Admin     2. Instructor\n')
+    print('\t\t\t1. Admin     2. Instructor     3. Exit\n')
     choose = input('Enter 1 or 2: ')
     if choose == '1':
-        print('\t\t\t1. Admin_Login     2. Admin_Register\n')
-        choose1 = input('Enter 1 or 2: ')
+        print('\t\t\t1. Admin_Login     2. Admin_Register     3. Exit\n')
+        choose1 = input("Enter 1, 2, and 'e' for exit: ")
         if choose1 == '1':
             Admin.Admin_login()
         elif choose1 == '2':
@@ -754,8 +882,8 @@ if __name__ == '__main__':
         else:
             exit()
     elif choose == '2':
-        print('\t\t\t1. Instructor_Login     2. Instructor_Register\n')
-        choose2 = input('Enter 1 or 2: ')
+        print('\t\t\t1. Instructor_Login     2. Instructor_Register     3. Exit\n')
+        choose2 = input("Enter 1, 2, and 'e' for exit: ")
         if choose2 == '1':
             Instructor.Instructor_login()
         elif choose2 == '2':
